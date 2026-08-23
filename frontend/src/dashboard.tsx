@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import LandingBackground from './components/LandingBackground';
+import SplitText from './components/SplitText';
+import BlurText from './components/BlurText';
 import './styles/index.css';
 import './styles/dashboard.css';
 
@@ -16,8 +18,11 @@ function Dashboard() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
 
-    // Modal state
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    // View Modal state (for reading with SplitText & BlurText)
+    const [viewingNote, setViewingNote] = useState<Note | null>(null);
+
+    // Edit / Create Modal state
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingNote, setEditingNote] = useState<Note | null>(null);
     const [noteTitle, setNoteTitle] = useState('');
     const [noteContent, setNoteContent] = useState('');
@@ -64,7 +69,20 @@ function Dashboard() {
         fetchNotes();
     }, []);
 
-    const handleOpenModal = (note?: Note) => {
+    // View Modal handlers
+    const handleOpenViewModal = (note: Note) => {
+        setViewingNote(note);
+    };
+
+    const handleCloseViewModal = () => {
+        setViewingNote(null);
+    };
+
+    // Edit / Create Modal handlers
+    const handleOpenEditModal = (note?: Note, e?: React.MouseEvent) => {
+        if (e) {
+            e.stopPropagation();
+        }
         if (note) {
             setEditingNote(note);
             setNoteTitle(note.title);
@@ -74,11 +92,11 @@ function Dashboard() {
             setNoteTitle('');
             setNoteContent('');
         }
-        setIsModalOpen(true);
+        setIsEditModalOpen(true);
     };
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
         setEditingNote(null);
         setNoteTitle('');
         setNoteContent('');
@@ -102,7 +120,7 @@ function Dashboard() {
 
                 if (response.ok) {
                     await fetchNotes();
-                    handleCloseModal();
+                    handleCloseEditModal();
                 }
             } else {
                 // Create note
@@ -117,7 +135,7 @@ function Dashboard() {
 
                 if (response.ok) {
                     await fetchNotes();
-                    handleCloseModal();
+                    handleCloseEditModal();
                 }
             }
         } catch (error) {
@@ -125,8 +143,10 @@ function Dashboard() {
         }
     };
 
-    const handleDeleteNote = async (id: number, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const handleDeleteNote = async (id: number, e?: React.MouseEvent) => {
+        if (e) {
+            e.stopPropagation();
+        }
         if (!confirm('Delete this note?')) return;
 
         try {
@@ -137,6 +157,9 @@ function Dashboard() {
 
             if (response.ok) {
                 setNotes(notes.filter((n) => n.id !== id));
+                if (viewingNote?.id === id) {
+                    setViewingNote(null);
+                }
             }
         } catch (error) {
             console.error('Failed to delete note:', error);
@@ -179,7 +202,7 @@ function Dashboard() {
                     </div>
 
                     <div className="dashboard-actions">
-                        <button className="btn-new-note" onClick={() => handleOpenModal()}>
+                        <button className="btn-new-note" onClick={() => handleOpenEditModal()}>
                             <span>+</span> New Note
                         </button>
                         <button className="btn-logout" onClick={handleLogout}>
@@ -219,7 +242,7 @@ function Dashboard() {
                                     : 'Create your first note to get started.'}
                             </p>
                             {!searchTerm && (
-                                <button className="btn-new-note" onClick={() => handleOpenModal()}>
+                                <button className="btn-new-note" onClick={() => handleOpenEditModal()}>
                                     <span>+</span> New Note
                                 </button>
                             )}
@@ -230,7 +253,7 @@ function Dashboard() {
                                 <article
                                     key={note.id}
                                     className="note-item"
-                                    onClick={() => handleOpenModal(note)}
+                                    onClick={() => handleOpenViewModal(note)}
                                 >
                                     <div>
                                         <h3 className="note-item-title">{note.title || 'Untitled'}</h3>
@@ -242,10 +265,7 @@ function Dashboard() {
                                             <button
                                                 className="btn-card-action"
                                                 title="Edit note"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleOpenModal(note);
-                                                }}
+                                                onClick={(e) => handleOpenEditModal(note, e)}
                                             >
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -270,15 +290,87 @@ function Dashboard() {
                     )}
                 </main>
 
-                {/* 3. Create / Edit Note Modal */}
-                {isModalOpen && (
-                    <div className="modal-overlay" onClick={handleCloseModal}>
+                {/* 3. View Note Modal (with SplitText for Title & BlurText for Content) */}
+                {viewingNote && (
+                    <div className="modal-overlay" onClick={handleCloseViewModal}>
+                        <div className="view-modal-card" onClick={(e) => e.stopPropagation()}>
+                            <div className="view-modal-header">
+                                <span className="view-modal-badge">Note Details</span>
+                                <button className="modal-close" onClick={handleCloseViewModal} title="Close">
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="view-modal-content-wrap">
+                                <SplitText
+                                    key={`title-${viewingNote.id}-${viewingNote.title}`}
+                                    text={viewingNote.title || 'Untitled'}
+                                    tag="h2"
+                                    className="view-modal-title"
+                                    delay={30}
+                                    duration={0.65}
+                                    ease="power3.out"
+                                    splitType="chars"
+                                    from={{ opacity: 0, y: 25 }}
+                                    to={{ opacity: 1, y: 0 }}
+                                />
+
+                                <BlurText
+                                    key={`content-${viewingNote.id}-${viewingNote.content}`}
+                                    text={viewingNote.content || ''}
+                                    animateBy="words"
+                                    delay={35}
+                                    stepDuration={0.3}
+                                    direction="top"
+                                    className="view-modal-body"
+                                />
+                            </div>
+
+                            <div className="view-modal-footer">
+                                <button
+                                    className="btn-view-delete"
+                                    onClick={() => handleDeleteNote(viewingNote.id)}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                    Delete
+                                </button>
+
+                                <div className="view-modal-actions">
+                                    <button className="btn-cancel" onClick={handleCloseViewModal}>
+                                        Close
+                                    </button>
+                                    <button
+                                        className="btn-view-edit"
+                                        onClick={() => {
+                                            const noteToEdit = viewingNote;
+                                            handleCloseViewModal();
+                                            handleOpenEditModal(noteToEdit);
+                                        }}
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                        Edit Note
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. Create / Edit Note Modal */}
+                {isEditModalOpen && (
+                    <div className="modal-overlay" onClick={handleCloseEditModal}>
                         <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header">
                                 <h3 className="modal-title">
                                     {editingNote ? 'Edit Note' : 'New Note'}
                                 </h3>
-                                <button className="modal-close" onClick={handleCloseModal} title="Close">
+                                <button className="modal-close" onClick={handleCloseEditModal} title="Close">
                                     ✕
                                 </button>
                             </div>
@@ -305,7 +397,7 @@ function Dashboard() {
                                     <button
                                         type="button"
                                         className="btn-cancel"
-                                        onClick={handleCloseModal}
+                                        onClick={handleCloseEditModal}
                                     >
                                         Cancel
                                     </button>
