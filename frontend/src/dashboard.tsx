@@ -341,13 +341,15 @@ function Dashboard() {
                 <main className="notes-main">
                     <div className="notes-header-bar">
                         <span className="notes-count">
-                            {filteredNotes.length} {filteredNotes.length === 1 ? 'note' : 'notes'}
+                            {isSearching
+                                ? 'Searching notes...'
+                                : `${filteredNotes.length} ${filteredNotes.length === 1 ? 'note' : 'notes'}`}
                         </span>
                     </div>
 
                     {isLoading || isSearching ? (
                         <div className="notes-grid">
-                            {[1, 2, 3, 4].map((n) => (
+                            {[1, 2, 3, 4, 5, 6].map((n) => (
                                 <div key={n} className="note-skeleton" />
                             ))}
                         </div>
