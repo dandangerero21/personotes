@@ -1,7 +1,11 @@
 package com.example.personotes.models;
 
 import java.time.LocalDateTime;
+
+import com.example.personotes.security.AesEncryptionConverter;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -20,10 +24,12 @@ public class Note {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Convert(converter = AesEncryptionConverter.class)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String title;
 
-    @Column(nullable = false)
+    @Convert(converter = AesEncryptionConverter.class)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     private LocalDateTime createdAt = LocalDateTime.now();
