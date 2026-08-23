@@ -107,8 +107,8 @@ function Register() {
 
                         {message && <p className="auth-msg">{message}</p>}
 
-                        <button type="submit" className="auth-submit-btn">
-                            Create Account
+                        <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+                            {isSubmitting ? 'Creating Account...' : 'Create Account'}
                         </button>
                     </form>
 

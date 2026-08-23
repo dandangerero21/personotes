@@ -95,8 +95,8 @@ function Login() {
 
                         {message && <p className="auth-msg">{message}</p>}
 
-                        <button type="submit" className="auth-submit-btn">
-                            Sign In
+                        <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+                            {isSubmitting ? 'Signing In...' : 'Sign In'}
                         </button>
                     </form>
 
