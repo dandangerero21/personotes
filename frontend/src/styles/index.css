@@ -21,34 +21,42 @@
 html,
 body {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: rgba(168, 85, 247, 0.45) rgba(9, 9, 11, 0.6);
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars matching PersoNotes Theme */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(9, 9, 11, 0.85);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, rgba(192, 132, 252, 0.45) 0%, rgba(168, 85, 247, 0.45) 50%, rgba(99, 102, 241, 0.45) 100%);
   border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.45);
+  background: linear-gradient(180deg, rgba(192, 132, 252, 0.85) 0%, rgba(168, 85, 247, 0.85) 50%, rgba(99, 102, 241, 0.85) 100%);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.6);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(9, 9, 11, 0.85);
 }
 
 /* =========================================================
@@ -56,7 +64,7 @@ body {
    ========================================================= */
 .landing-container {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -64,7 +72,7 @@ body {
   justify-content: space-between;
   z-index: 10;
   padding: 1rem 1.5rem 1.5rem 1.5rem;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .hero-section {

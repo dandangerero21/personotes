@@ -38,7 +38,7 @@ export default function LandingBackground({ className = '' }: LandingBackgroundP
       </div>
 
       {/* 2. Interactive DotField Canvas with cursor interaction */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'auto' }}>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
         <DotField
           dotRadius={1.5}
           dotSpacing={18}
