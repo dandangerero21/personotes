@@ -104,16 +104,26 @@ const BlurText: React.FC<BlurTextProps> = ({
   let globalTokenIndex = 0;
 
   return (
-    <div ref={ref} className={`blur-text ${className} text-left`}>
+    <div ref={ref} className={`blur-text ${className}`} style={{ textAlign: 'left' }}>
       {paragraphs.map((paragraph, pIdx) => {
         if (!paragraph.trim()) {
-          return <div key={pIdx} className="h-3 w-full" aria-hidden="true" />;
+          return <div key={pIdx} style={{ height: '1.25rem', width: '100%' }} aria-hidden="true" />;
         }
 
         const tokens = animateBy === 'words' ? paragraph.split(/\s+/).filter(Boolean) : paragraph.split('');
 
         return (
-          <p key={pIdx} className="leading-relaxed text-left whitespace-normal break-words mb-3.5 last:mb-0">
+          <p
+            key={pIdx}
+            className="blur-paragraph"
+            style={{
+              marginBottom: pIdx === paragraphs.length - 1 ? '0' : '1.25rem',
+              lineHeight: 1.75,
+              textAlign: 'left',
+              wordBreak: 'break-word',
+              whiteSpace: 'normal',
+            }}
+          >
             {tokens.map((token, tIdx) => {
               const currentGlobalIndex = globalTokenIndex++;
               const isLastToken = currentGlobalIndex === totalTokenCount - 1;
