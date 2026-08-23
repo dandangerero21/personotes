@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import LandingBackground from './components/LandingBackground';
 import SplitText from './components/SplitText';
 import BlurText from './components/BlurText';
+import AnimatedContent from './components/AnimatedContent';
 import './styles/index.css';
 import './styles/dashboard.css';
 
@@ -249,42 +250,67 @@ function Dashboard() {
                         </div>
                     ) : (
                         <div className="notes-grid">
-                            {filteredNotes.map((note) => (
-                                <article
+                            {filteredNotes.map((note, index) => (
+                                <AnimatedContent
                                     key={note.id}
-                                    className="note-item"
-                                    onClick={() => handleOpenViewModal(note)}
+                                    distance={35}
+                                    direction="vertical"
+                                    duration={0.65}
+                                    ease="power3.out"
+                                    delay={index * 0.05}
+                                    scale={0.97}
+                                    threshold={0.05}
                                 >
-                                    <div>
-                                        <h3 className="note-item-title">{note.title || 'Untitled'}</h3>
-                                        <p className="note-item-body">{note.content}</p>
-                                    </div>
-
-                                    <div className="note-item-footer">
-                                        <div className="note-card-actions">
-                                            <button
-                                                className="btn-card-action"
-                                                title="Edit note"
-                                                onClick={(e) => handleOpenEditModal(note, e)}
-                                            >
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                className="btn-card-action delete"
-                                                title="Delete note"
-                                                onClick={(e) => handleDeleteNote(note.id, e)}
-                                            >
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <polyline points="3 6 5 6 21 6" />
-                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                                </svg>
-                                            </button>
+                                    <article
+                                        className="note-item"
+                                        onClick={() => handleOpenViewModal(note)}
+                                    >
+                                        <div>
+                                            <SplitText
+                                                key={`card-title-${note.id}-${note.title}`}
+                                                text={note.title || 'Untitled'}
+                                                tag="h3"
+                                                className="note-item-title"
+                                                delay={20}
+                                                duration={0.5}
+                                            />
+                                            <BlurText
+                                                key={`card-content-${note.id}-${note.content}`}
+                                                text={note.content || ''}
+                                                animateBy="words"
+                                                delay={20}
+                                                stepDuration={0.25}
+                                                direction="top"
+                                                className="note-item-body"
+                                            />
                                         </div>
-                                    </div>
-                                </article>
+
+                                        <div className="note-item-footer">
+                                            <div className="note-card-actions">
+                                                <button
+                                                    className="btn-card-action"
+                                                    title="Edit note"
+                                                    onClick={(e) => handleOpenEditModal(note, e)}
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    className="btn-card-action delete"
+                                                    title="Delete note"
+                                                    onClick={(e) => handleDeleteNote(note.id, e)}
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="3 6 5 6 21 6" />
+                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </article>
+                                </AnimatedContent>
                             ))}
                         </div>
                     )}
