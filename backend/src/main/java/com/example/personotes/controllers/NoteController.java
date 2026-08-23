@@ -60,6 +60,12 @@ public class NoteController {
         return noteService.updateNote(id, dto, currentUsername);
     }
 
+    @PutMapping("/pin/{id}")
+    public ResponseEntity<NoteResponseDTO> togglePin(@PathVariable Long id, Authentication authentication) {
+        String currentUsername = authentication.getName();
+        return noteService.togglePin(id, currentUsername);
+    }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id, Authentication authentication) {
         String currentUsername = authentication.getName();

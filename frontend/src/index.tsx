@@ -26,7 +26,7 @@ function LandingPage() {
                                 • A simple, beautiful interface for your notes<br />
                                 • Take your notes anywhere, anytime<br />
                                 • Stay organized with our powerful note management system<br />
-                                • And much more on the way!
+                                • And much more on the way! (More features coming soon!)
                             </p>
                         </div>
                         <div className="note-tags">
@@ -42,7 +42,6 @@ function LandingPage() {
                                 Your notes are secured with end-to-end encryption. <br /> <br />
                                 • You can delete your notes anytime.<br />
                                 • No one, not even us, can read your notes<br />
-
                             </p>
                         </div>
                         <div className="note-tags">
@@ -51,11 +50,13 @@ function LandingPage() {
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <p className="card-hint">
+            <footer className="landing-footer">
+                <p>
                     Made with ❤️ by <span>Dandan</span>
                 </p>
-            </section>
+            </footer>
         </div>
     );
 }

@@ -33,7 +33,7 @@ const buildKeyframes = (
 const BlurText: React.FC<BlurTextProps> = ({
   text = '',
   startDelay = 0,
-  delay = 100,
+  delay = 50,
   className = '',
   animateBy = 'words',
   direction = 'top',
@@ -43,14 +43,10 @@ const BlurText: React.FC<BlurTextProps> = ({
   animationTo,
   easing = (t: number) => t,
   onAnimationComplete,
-  stepDuration = 0.35
+  stepDuration = 0.3
 }) => {
-  const elements = useMemo(() => {
-    return animateBy === 'words' ? text.split(' ') : text.split('');
-  }, [text, animateBy]);
-
   const [inView, setInView] = useState(false);
-  const ref = useRef<HTMLParagraphElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -69,16 +65,16 @@ const BlurText: React.FC<BlurTextProps> = ({
 
   const defaultFrom = useMemo(
     () =>
-      direction === 'top' ? { filter: 'blur(10px)', opacity: 0, y: -20 } : { filter: 'blur(10px)', opacity: 0, y: 20 },
+      direction === 'top' ? { filter: 'blur(10px)', opacity: 0, y: -16 } : { filter: 'blur(10px)', opacity: 0, y: 16 },
     [direction]
   );
 
   const defaultTo = useMemo(
     () => [
       {
-        filter: 'blur(4px)',
+        filter: 'blur(3px)',
         opacity: 0.6,
-        y: direction === 'top' ? 3 : -3
+        y: direction === 'top' ? 2 : -2
       },
       { filter: 'blur(0px)', opacity: 1, y: 0 }
     ],
@@ -92,33 +88,62 @@ const BlurText: React.FC<BlurTextProps> = ({
   const totalDuration = stepDuration * (stepCount - 1);
   const times = Array.from({ length: stepCount }, (_, i) => (stepCount === 1 ? 0 : i / (stepCount - 1)));
 
-  return (
-    <div ref={ref} className={`blur-text ${className} flex flex-wrap`}>
-      {elements.map((segment, index) => {
-        const animateKeyframes = buildKeyframes(fromSnapshot, toSnapshots);
+  // Split into paragraphs to preserve line breaks and natural block typography
+  const paragraphs = useMemo(() => {
+    return text.split(/\r?\n/);
+  }, [text]);
 
-        const spanTransition: Transition = {
-          duration: totalDuration,
-          times,
-          delay: ((startDelay || 0) + index * delay) / 1000,
-          ease: easing
-        };
+  // Calculate total tokens across all paragraphs for onAnimationComplete
+  let totalTokenCount = 0;
+  paragraphs.forEach(p => {
+    if (!p.trim()) return;
+    const tokens = animateBy === 'words' ? p.split(/\s+/).filter(Boolean) : p.split('');
+    totalTokenCount += tokens.length;
+  });
+
+  let globalTokenIndex = 0;
+
+  return (
+    <div ref={ref} className={`blur-text ${className} text-left`}>
+      {paragraphs.map((paragraph, pIdx) => {
+        if (!paragraph.trim()) {
+          return <div key={pIdx} className="h-3 w-full" aria-hidden="true" />;
+        }
+
+        const tokens = animateBy === 'words' ? paragraph.split(/\s+/).filter(Boolean) : paragraph.split('');
 
         return (
-          <motion.span
-            key={index}
-            initial={fromSnapshot}
-            animate={inView ? animateKeyframes : fromSnapshot}
-            transition={spanTransition}
-            onAnimationComplete={index === elements.length - 1 ? onAnimationComplete : undefined}
-            style={{
-              display: 'inline-block',
-              willChange: 'transform, filter, opacity'
-            }}
-          >
-            {segment === ' ' ? '\u00A0' : segment}
-            {animateBy === 'words' && index < elements.length - 1 && '\u00A0'}
-          </motion.span>
+          <p key={pIdx} className="leading-relaxed text-left whitespace-normal break-words mb-3.5 last:mb-0">
+            {tokens.map((token, tIdx) => {
+              const currentGlobalIndex = globalTokenIndex++;
+              const isLastToken = currentGlobalIndex === totalTokenCount - 1;
+              const animateKeyframes = buildKeyframes(fromSnapshot, toSnapshots);
+
+              const spanTransition: Transition = {
+                duration: totalDuration,
+                times,
+                delay: ((startDelay || 0) + currentGlobalIndex * delay) / 1000,
+                ease: easing
+              };
+
+              return (
+                <motion.span
+                  key={tIdx}
+                  initial={fromSnapshot}
+                  animate={inView ? animateKeyframes : fromSnapshot}
+                  transition={spanTransition}
+                  onAnimationComplete={isLastToken ? onAnimationComplete : undefined}
+                  style={{
+                    display: 'inline-block',
+                    marginRight: animateBy === 'words' && tIdx < tokens.length - 1 ? '0.28em' : undefined,
+                    willChange: 'transform, filter, opacity'
+                  }}
+                >
+                  {token}
+                </motion.span>
+              );
+            })}
+          </p>
         );
       })}
     </div>

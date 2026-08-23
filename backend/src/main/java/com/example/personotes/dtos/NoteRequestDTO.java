@@ -12,4 +12,5 @@ import lombok.Setter;
 public class NoteRequestDTO {
     private String title;
     private String content;
+    private Boolean pinned;
 }

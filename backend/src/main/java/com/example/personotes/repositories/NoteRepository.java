@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface NoteRepository extends JpaRepository<Note, Long> {
     List<Note> findByUser_Username(String username);
 
+    List<Note> findByUser_UsernameOrderByPinnedDescUpdatedAtDesc(String username);
+
     List<Note> findByTitleContainingAndUser_Username(String title, String username);
 
     List<Note> findByContentContainingAndUser_Username(String content, String username);
