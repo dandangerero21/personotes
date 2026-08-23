@@ -9,10 +9,12 @@ function Login() {
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
 
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const response = await fetch('http://localhost:8080/users/login', {
+        const response = await fetch(`${API_BASE_URL}/users/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

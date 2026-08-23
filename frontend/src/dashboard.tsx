@@ -33,6 +33,8 @@ function Dashboard() {
         };
     };
 
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
     const fetchNotes = async () => {
         if (!token) {
             navigate('/login');
@@ -40,7 +42,7 @@ function Dashboard() {
         }
 
         try {
-            const response = await fetch('http://localhost:8080/notes/get', {
+            const response = await fetch(`${API_BASE_URL}/notes/get`, {
                 headers: getAuthHeaders(),
             });
 
@@ -89,7 +91,7 @@ function Dashboard() {
         try {
             if (editingNote) {
                 // Update note
-                const response = await fetch(`http://localhost:8080/notes/update/${editingNote.id}`, {
+                const response = await fetch(`${API_BASE_URL}/notes/update/${editingNote.id}`, {
                     method: 'PUT',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
@@ -104,7 +106,7 @@ function Dashboard() {
                 }
             } else {
                 // Create note
-                const response = await fetch('http://localhost:8080/notes/create', {
+                const response = await fetch(`${API_BASE_URL}/notes/create`, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
@@ -128,7 +130,7 @@ function Dashboard() {
         if (!confirm('Delete this note?')) return;
 
         try {
-            const response = await fetch(`http://localhost:8080/notes/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/notes/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders(),
             });
