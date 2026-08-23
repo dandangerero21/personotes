@@ -39,7 +39,7 @@ public class SecurityService {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/users/login", "/users/register").permitAll()
+                .requestMatchers("/users/login", "/users/register", "/health").permitAll()
                 .anyRequest().authenticated())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfiguration = new CorsConfiguration();
