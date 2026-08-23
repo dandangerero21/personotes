@@ -8,6 +8,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 export interface SplitTextProps {
   text: string;
   className?: string;
+  startDelay?: number;
   delay?: number;
   duration?: number;
   ease?: string | ((t: number) => number);
@@ -24,6 +25,7 @@ export interface SplitTextProps {
 const SplitText: React.FC<SplitTextProps> = ({
   text = '',
   className = '',
+  startDelay = 0,
   delay = 35,
   duration = 0.8,
   ease = 'power3.out',
@@ -61,6 +63,7 @@ const SplitText: React.FC<SplitTextProps> = ({
         { ...from },
         {
           ...to,
+          delay: (startDelay || 0) / 1000,
           duration,
           ease,
           stagger: delay / 1000,
@@ -73,7 +76,7 @@ const SplitText: React.FC<SplitTextProps> = ({
       );
     },
     {
-      dependencies: [text, delay, duration, ease, JSON.stringify(from), JSON.stringify(to)],
+      dependencies: [text, startDelay, delay, duration, ease, JSON.stringify(from), JSON.stringify(to)],
       scope: containerRef
     }
   );

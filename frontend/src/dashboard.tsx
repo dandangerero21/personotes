@@ -250,40 +250,47 @@ function Dashboard() {
                         </div>
                     ) : (
                         <div className="notes-grid">
-                            {filteredNotes.map((note, index) => (
-                                <AnimatedContent
-                                    key={note.id}
-                                    distance={35}
-                                    direction="vertical"
-                                    duration={0.65}
-                                    ease="power3.out"
-                                    delay={index * 0.05}
-                                    scale={0.97}
-                                    threshold={0.05}
-                                >
-                                    <article
-                                        className="note-item"
-                                        onClick={() => handleOpenViewModal(note)}
+                            {filteredNotes.map((note, index) => {
+                                const cardBaseDelay = index * 0.28;
+                                const titleStartDelay = Math.round(cardBaseDelay * 1000) + 80;
+                                const contentStartDelay = Math.round(cardBaseDelay * 1000) + 200;
+
+                                return (
+                                    <AnimatedContent
+                                        key={note.id}
+                                        distance={35}
+                                        direction="vertical"
+                                        duration={0.6}
+                                        ease="power3.out"
+                                        delay={cardBaseDelay}
+                                        scale={0.96}
+                                        threshold={0.05}
                                     >
-                                        <div>
-                                            <SplitText
-                                                key={`card-title-${note.id}-${note.title}`}
-                                                text={note.title || 'Untitled'}
-                                                tag="h3"
-                                                className="note-item-title"
-                                                delay={20}
-                                                duration={0.5}
-                                            />
-                                            <BlurText
-                                                key={`card-content-${note.id}-${note.content}`}
-                                                text={note.content || ''}
-                                                animateBy="words"
-                                                delay={20}
-                                                stepDuration={0.25}
-                                                direction="top"
-                                                className="note-item-body"
-                                            />
-                                        </div>
+                                        <article
+                                            className="note-item"
+                                            onClick={() => handleOpenViewModal(note)}
+                                        >
+                                            <div>
+                                                <SplitText
+                                                    key={`card-title-${note.id}-${note.title}`}
+                                                    text={note.title || 'Untitled'}
+                                                    tag="h3"
+                                                    className="note-item-title"
+                                                    startDelay={titleStartDelay}
+                                                    delay={18}
+                                                    duration={0.45}
+                                                />
+                                                <BlurText
+                                                    key={`card-content-${note.id}-${note.content}`}
+                                                    text={note.content || ''}
+                                                    animateBy="words"
+                                                    startDelay={contentStartDelay}
+                                                    delay={22}
+                                                    stepDuration={0.25}
+                                                    direction="top"
+                                                    className="note-item-body"
+                                                />
+                                            </div>
 
                                         <div className="note-item-footer">
                                             <div className="note-card-actions">
@@ -310,8 +317,9 @@ function Dashboard() {
                                             </div>
                                         </div>
                                     </article>
-                                </AnimatedContent>
-                            ))}
+                                    </AnimatedContent>
+                                );
+                            })}
                         </div>
                     )}
                 </main>

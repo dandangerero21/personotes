@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 
 type BlurTextProps = {
   text?: string;
+  startDelay?: number;
   delay?: number;
   className?: string;
   animateBy?: 'words' | 'letters';
@@ -31,6 +32,7 @@ const buildKeyframes = (
 
 const BlurText: React.FC<BlurTextProps> = ({
   text = '',
+  startDelay = 0,
   delay = 100,
   className = '',
   animateBy = 'words',
@@ -98,7 +100,7 @@ const BlurText: React.FC<BlurTextProps> = ({
         const spanTransition: Transition = {
           duration: totalDuration,
           times,
-          delay: (index * delay) / 1000,
+          delay: ((startDelay || 0) + index * delay) / 1000,
           ease: easing
         };
 
