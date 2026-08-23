@@ -2,49 +2,56 @@ import LandingBackground from "./components/LandingBackground";
 import './styles/index.css';
 import './styles/auth.css';
 import { useState } from "react";
-import { Link } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
 
 function Register() {
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setMessage('');
 
-        const response = await fetch(`${API_BASE_URL}/users/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username,
-                email,
-                password,
-            }),
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username,
+                    email,
+                    password,
+                }),
+            });
 
-        const data = await response.json();
-
-        if (response.ok) {
-            console.log('Account Created:', data);
-            setMessage('Account created successfully! Redirecting...');
-            const timeoutId = setTimeout(() => {
-                console.log('Redirecting to login...');
-                window.location.href = '/login';
-            }, 2000);
-
-            // Cleanup timeout on unmount
-            return () => clearTimeout(timeoutId);
-
-        } else {
-            console.log('Error:', data);
-            setMessage('Error creating account');
+            if (response.ok) {
+                setMessage('Account created successfully! Redirecting to login...');
+                setTimeout(() => {
+                    navigate('/login');
+                }, 1000);
+            } else {
+                let errorMsg = 'Error creating account';
+                try {
+                    const data = await response.json();
+                    if (data.message) errorMsg = data.message;
+                } catch {
+                    // Ignore non-json
+                }
+                setMessage(errorMsg);
+            }
+        } catch (error) {
+            console.error('Register network error:', error);
+            setMessage('Failed to connect to backend server. If Render backend was sleeping, please wait ~30s and try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 

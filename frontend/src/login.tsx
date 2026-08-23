@@ -2,45 +2,56 @@ import LandingBackground from "./components/LandingBackground";
 import './styles/index.css';
 import './styles/auth.css';
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setMessage('');
 
-        const response = await fetch(`${API_BASE_URL}/users/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username,
-                password,
-            }),
-        });
-        const data = await response.json();
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username,
+                    password,
+                }),
+            });
 
-        if (response.ok) {
-            localStorage.setItem("token", `Bearer ${data.token}`);
-            console.log('Logged In:', data);
-            setMessage('Login successful! Redirecting...');
-            const timeoutId = setTimeout(() => {
-                console.log('Redirecting to dashboard...');
-                window.location.href = '/dashboard';
-            }, 2000);
-
-            // Cleanup timeout on unmount
-            return () => clearTimeout(timeoutId);
-
-        } else {
-            console.log('Error:', data);
-            setMessage('Error Logging In');
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem("token", `Bearer ${data.token}`);
+                setMessage('Login successful! Redirecting to dashboard...');
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 1000);
+            } else {
+                let errorMsg = 'Invalid username or password';
+                try {
+                    const data = await response.json();
+                    if (data.message) errorMsg = data.message;
+                } catch {
+                    // Ignore non-json response
+                }
+                setMessage(errorMsg);
+            }
+        } catch (error) {
+            console.error('Login network error:', error);
+            setMessage('Failed to connect to backend server. If Render backend was sleeping, please wait ~30s and try again.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
