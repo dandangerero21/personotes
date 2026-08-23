@@ -150,6 +150,25 @@
     gap: 1.25rem;
 }
 
+/* Skeleton Loading Cards */
+.note-skeleton {
+    min-height: 190px;
+    border-radius: 1rem;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0%, rgba(168, 85, 247, 0.07) 50%, rgba(255, 255, 255, 0.02) 100%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.4s infinite ease-in-out;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@keyframes skeletonShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 /* Individual Note Card */
 .note-item {
     position: relative;

@@ -49,18 +49,36 @@ function Dashboard() {
     const navigate = useNavigate();
     const [notes, setNotes] = useState<Note[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
+    useEffect(() => {
+        if (!searchTerm.trim()) {
+            setDebouncedSearch('');
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setIsSearching(false);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     const randomEmptyMessage = useMemo(() => {
-        if (!searchTerm.trim()) return null;
+        if (!debouncedSearch.trim()) return null;
         let hash = 0;
-        for (let i = 0; i < searchTerm.length; i++) {
-            hash = (hash << 5) - hash + searchTerm.charCodeAt(i);
+        for (let i = 0; i < debouncedSearch.length; i++) {
+            hash = (hash << 5) - hash + debouncedSearch.charCodeAt(i);
             hash |= 0;
         }
         const index = Math.abs(hash) % EMPTY_SEARCH_MESSAGES.length;
         return EMPTY_SEARCH_MESSAGES[index];
-    }, [searchTerm]);
+    }, [debouncedSearch]);
 
     // View Modal state (for reading with SplitText & BlurText)
     const [viewingNote, setViewingNote] = useState<Note | null>(null);
@@ -281,8 +299,8 @@ function Dashboard() {
 
     const filteredNotes = notes.filter(
         (n) =>
-            n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            n.content.toLowerCase().includes(searchTerm.toLowerCase())
+            n.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            n.content.toLowerCase().includes(debouncedSearch.toLowerCase())
     );
 
     return (
@@ -327,32 +345,31 @@ function Dashboard() {
                         </span>
                     </div>
 
-                    {isLoading ? (
+                    {isLoading || isSearching ? (
                         <div className="notes-grid">
-                            {[1, 2, 3].map((n) => (
+                            {[1, 2, 3, 4].map((n) => (
                                 <div key={n} className="note-skeleton" />
                             ))}
                         </div>
                     ) : filteredNotes.length === 0 ? (
                         <div className="empty-state">
                             <div className="empty-animated-icon">
-                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="11" cy="11" r="8" />
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65" strokeWidth="2" />
-                                    <path d="M9.5 9a2.2 2.2 0 0 1 3.5 1.2c0 1-1.2 1.3-1.2 2.1" />
-                                    <circle cx="11.8" cy="14.8" r="0.6" fill="currentColor" stroke="none" />
+                                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" strokeWidth="2.5" />
                                 </svg>
                             </div>
                             <h3 className="empty-state-title">
-                                {randomEmptyMessage ? (
-                                    randomEmptyMessage.title(searchTerm)
+                                {debouncedSearch ? (
+                                    randomEmptyMessage?.title(debouncedSearch)
                                 ) : (
                                     'Your vault is quiet'
                                 )}
                             </h3>
                             <p className="empty-state-text">
-                                {randomEmptyMessage ? (
-                                    randomEmptyMessage.subtitle
+                                {debouncedSearch ? (
+                                    randomEmptyMessage?.subtitle
                                 ) : (
                                     'Create your first note to get started.'
                                 )}
