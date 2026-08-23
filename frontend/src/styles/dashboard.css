@@ -174,23 +174,6 @@
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 25px rgba(168, 85, 247, 0.12);
 }
 
-.note-pinned-indicator {
-    position: absolute;
-    top: 0.85rem;
-    right: 1rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.15rem 0.5rem;
-    background: rgba(168, 85, 247, 0.18);
-    border: 1px solid rgba(168, 85, 247, 0.35);
-    border-radius: 9999px;
-    font-size: 0.685rem;
-    font-weight: 600;
-    color: #d8b4fe;
-    letter-spacing: 0.02em;
-}
-
 .note-item:hover {
     transform: translateY(-3px);
     border-color: rgba(168, 85, 247, 0.4);
