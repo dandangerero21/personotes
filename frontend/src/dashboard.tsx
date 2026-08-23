@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import LandingBackground from './components/LandingBackground';
 import SplitText from './components/SplitText';
@@ -14,11 +14,53 @@ interface Note {
     pinned?: boolean;
 }
 
+const EMPTY_SEARCH_MESSAGES = [
+    {
+        title: (term: string) => <>Nothing matched <span className="empty-query-highlight">"{term}"</span></>,
+        subtitle: 'Check your spelling or write a fresh note about it.'
+    },
+    {
+        title: (term: string) => <>No results for <span className="empty-query-highlight">"{term}"</span></>,
+        subtitle: 'Check your keywords, or capture this thought in a new note.'
+    },
+    {
+        title: (term: string) => <>No notes found for <span className="empty-query-highlight">"{term}"</span></>,
+        subtitle: 'Try a different keyword, or turn this search into a new note.'
+    },
+    {
+        title: (term: string) => <>Couldn't find <span className="empty-query-highlight">"{term}"</span></>,
+        subtitle: 'Double-check your spelling, or start a new note with this thought.'
+    },
+    {
+        title: (term: string) => <>Zero matches for <span className="empty-query-highlight">"{term}"</span></>,
+        subtitle: 'Nothing came up in your vault. Maybe write it down now?'
+    },
+    {
+        title: (term: string) => <>Note found 404 for <span className="empty-query-highlight">"{term}"</span></>,
+        subtitle: "We searched high and low, but this note hasn't been penned yet."
+    },
+    {
+        title: (term: string) => <>Lost in the void: <span className="empty-query-highlight">"{term}"</span></>,
+        subtitle: "Looks like your thoughts on this haven't been written down yet."
+    }
+];
+
 function Dashboard() {
     const navigate = useNavigate();
     const [notes, setNotes] = useState<Note[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+
+    const randomEmptyMessage = useMemo(() => {
+        if (!searchTerm.trim()) return null;
+        let hash = 0;
+        for (let i = 0; i < searchTerm.length; i++) {
+            hash = (hash << 5) - hash + searchTerm.charCodeAt(i);
+            hash |= 0;
+        }
+        const index = Math.abs(hash) % EMPTY_SEARCH_MESSAGES.length;
+        return EMPTY_SEARCH_MESSAGES[index];
+    }, [searchTerm]);
 
     // View Modal state (for reading with SplitText & BlurText)
     const [viewingNote, setViewingNote] = useState<Note | null>(null);
@@ -293,16 +335,28 @@ function Dashboard() {
                         </div>
                     ) : filteredNotes.length === 0 ? (
                         <div className="empty-state">
-                            <div className="empty-state-icon">📝</div>
-                            <h3 className="empty-state-title">No notes found</h3>
+                            <div className="empty-animated-icon">
+                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" strokeWidth="2" />
+                                    <path d="M9.5 9a2.2 2.2 0 0 1 3.5 1.2c0 1-1.2 1.3-1.2 2.1" />
+                                    <circle cx="11.8" cy="14.8" r="0.6" fill="currentColor" stroke="none" />
+                                </svg>
+                            </div>
+                            <h3 className="empty-state-title">
+                                {randomEmptyMessage ? (
+                                    randomEmptyMessage.title(searchTerm)
+                                ) : (
+                                    'Your vault is quiet'
+                                )}
+                            </h3>
                             <p className="empty-state-text">
-                                {searchTerm ? 'Try a different search query' : 'Create your first note to get started'}
+                                {randomEmptyMessage ? (
+                                    randomEmptyMessage.subtitle
+                                ) : (
+                                    'Create your first note to get started.'
+                                )}
                             </p>
-                            {!searchTerm && (
-                                <button className="btn-empty-create" onClick={() => handleOpenEditModal()}>
-                                    Create a Note
-                                </button>
-                            )}
                         </div>
                     ) : (
                         <div className="notes-grid">
