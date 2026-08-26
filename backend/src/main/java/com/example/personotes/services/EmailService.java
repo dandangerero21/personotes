@@ -1,5 +1,7 @@
 package com.example.personotes.services;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +34,10 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String toEmail, String token) {
-        String resetLink = frontendUrl + "/reset-password?token=" + token;
+        String baseUrl = (frontendUrl != null ? frontendUrl.trim().replaceAll("/+$", "") : "http://localhost:5173");
+        String resetLink = baseUrl + "/reset-password?token=" + token;
 
-        // 1. Log the reset link in the console (helpful for dev & logs)
+        // 1. Log the reset link in the server console (immediately available)
         logger.info("================================================================================");
         logger.info("               PERSO-NOTES PASSWORD RESET NOTIFICATION                          ");
         logger.info("================================================================================");
@@ -43,18 +46,19 @@ public class EmailService {
         logger.info("This link will expire in 15 minutes.");
         logger.info("================================================================================");
 
-        // 2. Dispatch real email via Gmail SMTP if credentials are configured
+        // 2. Dispatch email asynchronously in the background so the user never waits
         if (mailUsername != null && !mailUsername.trim().isEmpty() &&
             mailPassword != null && !mailPassword.trim().isEmpty() &&
             mailSender != null) {
-            sendViaSmtp(toEmail, resetLink);
+            CompletableFuture.runAsync(() -> sendViaSmtp(toEmail, resetLink));
         } else {
-            logger.info("SPRING_MAIL_USERNAME / SPRING_MAIL_PASSWORD not configured. Reset link logged to console.");
+            logger.warn("SPRING_MAIL_USERNAME or SPRING_MAIL_PASSWORD is not set. Real email not sent.");
         }
     }
 
     private void sendViaSmtp(String toEmail, String resetLink) {
         try {
+            logger.info("Attempting to send email to {} via Gmail SMTP...", toEmail);
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -64,9 +68,9 @@ public class EmailService {
             helper.setText(buildHtmlTemplate(resetLink), true);
 
             mailSender.send(message);
-            logger.info("Password reset email successfully sent via Gmail SMTP to {}", toEmail);
+            logger.info(">>> SUCCESS: Password reset email sent via Gmail SMTP to {}", toEmail);
         } catch (Exception e) {
-            logger.error("Failed to send email via Gmail SMTP to {}: {}", toEmail, e.getMessage(), e);
+            logger.error(">>> ERROR sending email via Gmail SMTP to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
