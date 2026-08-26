@@ -1,11 +1,5 @@
 package com.example.personotes.services;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +14,6 @@ import jakarta.mail.internet.MimeMessage;
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
-    private static final String RESEND_API_URL = "https://api.resend.com/emails";
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -31,27 +24,17 @@ public class EmailService {
     @Value("${spring.mail.password:}")
     private String mailPassword;
 
-    @Value("${resend.api.key:}")
-    private String resendApiKey;
-
-    @Value("${resend.from.email:PersoNotes <onboarding@resend.dev>}")
-    private String resendFromEmail;
-
     private final JavaMailSender mailSender;
-    private final HttpClient httpClient;
 
     @Autowired
     public EmailService(@Autowired(required = false) JavaMailSender mailSender) {
         this.mailSender = mailSender;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
     }
 
     public void sendPasswordResetEmail(String toEmail, String token) {
         String resetLink = frontendUrl + "/reset-password?token=" + token;
 
-        // 1. Prominent Console Log (always available for local dev)
+        // 1. Log the reset link in the console (helpful for dev & logs)
         logger.info("================================================================================");
         logger.info("               PERSO-NOTES PASSWORD RESET NOTIFICATION                          ");
         logger.info("================================================================================");
@@ -60,21 +43,14 @@ public class EmailService {
         logger.info("This link will expire in 15 minutes.");
         logger.info("================================================================================");
 
-        // 2. Dispatch email via Gmail SMTP if configured
+        // 2. Dispatch real email via Gmail SMTP if credentials are configured
         if (mailUsername != null && !mailUsername.trim().isEmpty() &&
             mailPassword != null && !mailPassword.trim().isEmpty() &&
             mailSender != null) {
             sendViaSmtp(toEmail, resetLink);
-            return;
+        } else {
+            logger.info("SPRING_MAIL_USERNAME / SPRING_MAIL_PASSWORD not configured. Reset link logged to console.");
         }
-
-        // 3. Fallback: Dispatch via Resend API if configured
-        if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
-            sendViaResend(toEmail, resetLink);
-            return;
-        }
-
-        logger.info("Neither Gmail SMTP nor Resend is configured. Reset link only logged to console.");
     }
 
     private void sendViaSmtp(String toEmail, String resetLink) {
@@ -82,8 +58,8 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(mailUsername, "PersoNotes");
-            helper.setTo(toEmail);
+            helper.setFrom(mailUsername.trim(), "PersoNotes");
+            helper.setTo(toEmail.trim());
             helper.setSubject("Reset your PersoNotes password");
             helper.setText(buildHtmlTemplate(resetLink), true);
 
@@ -94,39 +70,8 @@ public class EmailService {
         }
     }
 
-    private void sendViaResend(String toEmail, String resetLink) {
-        try {
-            String htmlContent = buildHtmlTemplate(resetLink);
-            String payload = String.format(
-                "{\"from\":\"%s\",\"to\":[\"%s\"],\"subject\":\"%s\",\"html\":\"%s\"}",
-                escapeJson(resendFromEmail),
-                escapeJson(toEmail),
-                escapeJson("Reset your PersoNotes password"),
-                escapeJson(htmlContent)
-            );
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(RESEND_API_URL))
-                    .header("Authorization", "Bearer " + resendApiKey.trim())
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(payload))
-                    .timeout(Duration.ofSeconds(10))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                logger.info("Password reset email successfully sent via Resend to {}. Status: {}", toEmail, response.statusCode());
-            } else {
-                logger.error("Failed to send email via Resend to {}. Status: {}, Response: {}", toEmail, response.statusCode(), response.body());
-            }
-        } catch (Exception e) {
-            logger.error("Error dispatching email via Resend API: {}", e.getMessage(), e);
-        }
-    }
-
     private String buildHtmlTemplate(String resetLink) {
-        return """
+        String html = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -153,42 +98,17 @@ public class EmailService {
                     <h2>Reset Your Password</h2>
                     <p>We received a request to reset the password for your PersoNotes account. Click the button below to choose a new password:</p>
                     <div class="btn-wrapper">
-                        <a href="%s" class="btn" target="_blank">Reset Password</a>
+                        <a href="{{RESET_LINK}}" class="btn" target="_blank">Reset Password</a>
                     </div>
                     <p>This password reset link will expire in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.</p>
                     <div class="footer">
                         <p style="margin-bottom: 8px;">If the button doesn't work, copy and paste this link in your browser:</p>
-                        <a href="%s" class="link-fallback">%s</a>
+                        <a href="{{RESET_LINK}}" class="link-fallback">{{RESET_LINK}}</a>
                     </div>
                 </div>
             </body>
             </html>
-            """.formatted(resetLink, resetLink, resetLink);
-    }
-
-    private String escapeJson(String str) {
-        if (str == null) return "";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            switch (c) {
-                case '"' -> sb.append("\\\"");
-                case '\\' -> sb.append("\\\\");
-                case '\b' -> sb.append("\\b");
-                case '\f' -> sb.append("\\f");
-                case '\n' -> sb.append("\\n");
-                case '\r' -> sb.append("\\r");
-                case '\t' -> sb.append("\\t");
-                default -> {
-                    if (c < ' ') {
-                        String hex = String.format("\\u%04x", (int) c);
-                        sb.append(hex);
-                    } else {
-                        sb.append(c);
-                    }
-                }
-            }
-        }
-        return sb.toString();
+            """;
+        return html.replace("{{RESET_LINK}}", resetLink);
     }
 }
