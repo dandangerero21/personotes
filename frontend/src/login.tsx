@@ -9,6 +9,7 @@ function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
+    const [isSuccess, setIsSuccess] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -17,6 +18,7 @@ function Login() {
         e.preventDefault();
         setIsSubmitting(true);
         setMessage('');
+        setIsSuccess(false);
 
         try {
             const response = await fetch(`${API_BASE_URL}/users/login`, {
@@ -33,6 +35,7 @@ function Login() {
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem("token", `Bearer ${data.token}`);
+                setIsSuccess(true);
                 setMessage('Login successful! Redirecting to dashboard...');
                 setTimeout(() => {
                     navigate('/dashboard');
@@ -45,10 +48,12 @@ function Login() {
                 } catch {
                     // Ignore non-json response
                 }
+                setIsSuccess(false);
                 setMessage(errorMsg);
             }
         } catch (error) {
             console.error('Login network error:', error);
+            setIsSuccess(false);
             setMessage('Failed to connect to backend server. If Render backend was sleeping, please wait ~30s and try again.');
         } finally {
             setIsSubmitting(false);
@@ -64,8 +69,9 @@ function Login() {
                 </Link>
 
                 <h1 className="auth-heading">
-                    Login to <span className="gradient-text">PersoNotes</span>
+                    Login to PersoNotes
                 </h1>
+                <p className="auth-desc">Access your encrypted thoughts and notes</p>
 
                 <div className="login-box">
                     <form className="login-form" onSubmit={handleSubmit}>
@@ -82,7 +88,12 @@ function Login() {
                         </div>
 
                         <div className="input-group">
-                            <label htmlFor="password">Password</label>
+                            <div className="input-label-row">
+                                <label htmlFor="password">Password</label>
+                                <Link to="/forgot-password" className="forgot-link">
+                                    Forgot password?
+                                </Link>
+                            </div>
                             <input
                                 id="password"
                                 type="password"
@@ -93,7 +104,11 @@ function Login() {
                             />
                         </div>
 
-                        {message && <p className="auth-msg">{message}</p>}
+                        {message && (
+                            <p className={`auth-msg ${isSuccess ? 'auth-msg-success' : 'auth-msg-error'}`}>
+                                {message}
+                            </p>
+                        )}
 
                         <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
                             {isSubmitting ? 'Signing In...' : 'Sign In'}

@@ -5,6 +5,8 @@ import Header from './includes/header.tsx'
 import LandingPage from './index.tsx'
 import Login from './login.tsx'
 import Register from './register.tsx'
+import ForgotPassword from './forgot-password.tsx'
+import ResetPassword from './reset-password.tsx'
 import Dashboard from './dashboard.tsx'
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
@@ -24,6 +26,8 @@ createRoot(document.getElementById('root')!).render(
         />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>

@@ -1,5 +1,9 @@
 package com.example.personotes.services;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,6 +22,9 @@ import com.example.personotes.auth.JwtAuthenticationFilter;
 public class SecurityService {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,*}")
+    private String allowedOrigins;
 
     public SecurityService(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -39,13 +46,24 @@ public class SecurityService {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/users/login", "/users/register", "/health").permitAll()
+                .requestMatchers(
+                        "/users/login",
+                        "/users/register",
+                        "/users/forgot-password",
+                        "/users/reset-password",
+                        "/health"
+                ).permitAll()
                 .anyRequest().authenticated())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfiguration = new CorsConfiguration();
-                    corsConfiguration.addAllowedOrigin("*");
-                    corsConfiguration.addAllowedHeader("*");
-                    corsConfiguration.addAllowedMethod("*");
+                    List<String> origins = Arrays.asList(allowedOrigins.split(","));
+                    if (origins.contains("*")) {
+                        corsConfiguration.addAllowedOriginPattern("*");
+                    } else {
+                        corsConfiguration.setAllowedOrigins(origins);
+                    }
+                    corsConfiguration.setAllowedHeaders(List.of("*"));
+                    corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                     corsConfiguration.setAllowCredentials(false);
                     return corsConfiguration;
                 }))

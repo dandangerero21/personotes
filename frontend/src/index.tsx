@@ -8,7 +8,7 @@ function LandingPage() {
             <section className="hero-section">
                 <h1 className="hero-title">
                     Your personalized <br />
-                    <span className="gradient-text">notes.</span>
+                    notes.
                 </h1>
 
                 <p className="hero-subtitle">
@@ -21,7 +21,7 @@ function LandingPage() {
                             <h3 className="note-title">Tired of ugly looking notes?</h3>
                             <p className="note-content">
                                 Boring note-taking apps are a thing of the past.
-                                With <span className="gradient-text">PersoNotes</span>, you can capture your thoughts in a beautiful, personalized way. <br /><br />
+                                With PersoNotes, you can capture your thoughts in a beautiful, personalized way. <br /><br />
                                 • No more lost ideas or forgotten to-dos<br />
                                 • A simple, beautiful interface for your notes<br />
                                 • Take your notes anywhere, anytime<br />

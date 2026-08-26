@@ -10,6 +10,7 @@ function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
+    const [isSuccess, setIsSuccess] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -18,6 +19,7 @@ function Register() {
         e.preventDefault();
         setIsSubmitting(true);
         setMessage('');
+        setIsSuccess(false);
 
         try {
             const response = await fetch(`${API_BASE_URL}/users/register`, {
@@ -33,6 +35,7 @@ function Register() {
             });
 
             if (response.ok) {
+                setIsSuccess(true);
                 setMessage('Account created successfully! Redirecting to login...');
                 setTimeout(() => {
                     navigate('/login');
@@ -45,10 +48,12 @@ function Register() {
                 } catch {
                     // Ignore non-json
                 }
+                setIsSuccess(false);
                 setMessage(errorMsg);
             }
         } catch (error) {
             console.error('Register network error:', error);
+            setIsSuccess(false);
             setMessage('Failed to connect to backend server. If Render backend was sleeping, please wait ~30s and try again.');
         } finally {
             setIsSubmitting(false);
@@ -64,8 +69,9 @@ function Register() {
                 </Link>
 
                 <h1 className="auth-heading">
-                    Join <span className="gradient-text">PersoNotes</span>
+                    Join PersoNotes
                 </h1>
+                <p className="auth-desc">Start taking secure, encrypted personal notes</p>
 
                 <div className="login-box">
                     <form className="login-form" onSubmit={handleSubmit}>
@@ -98,14 +104,18 @@ function Register() {
                             <input
                                 id="reg-password"
                                 type="password"
-                                placeholder="Create a strong password"
+                                placeholder="Create a strong password (min 6 chars)"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
                         </div>
 
-                        {message && <p className="auth-msg">{message}</p>}
+                        {message && (
+                            <p className={`auth-msg ${isSuccess ? 'auth-msg-success' : 'auth-msg-error'}`}>
+                                {message}
+                            </p>
+                        )}
 
                         <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
                             {isSubmitting ? 'Creating Account...' : 'Create Account'}

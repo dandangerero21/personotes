@@ -2,12 +2,12 @@
     z-index: 10;
     position: relative;
     width: 100%;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
 }
 
 .nav-button {
@@ -25,6 +25,7 @@
     font-size: 0.9rem;
     font-family: 'Inter', sans-serif;
     transition: all 0.2s ease;
+    z-index: 20;
 }
 
 .nav-button:hover {
@@ -39,13 +40,23 @@
     font-weight: 700;
     letter-spacing: -0.03em;
     color: #ffffff;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     text-align: center;
+}
+
+.auth-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #a1a1aa;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    max-width: 380px;
+    line-height: 1.5;
 }
 
 .login-box {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     padding: 2.25rem 2rem;
     border-radius: 1.25rem;
     background: rgba(18, 18, 22, 0.65);
@@ -66,6 +77,25 @@
     text-align: left;
 }
 
+.input-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.forgot-link {
+    font-size: 0.8rem;
+    color: #c084fc;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.forgot-link:hover {
+    color: #e9d5ff;
+    text-decoration: underline;
+}
+
 .input-group input {
     width: 100%;
     padding: 0.75rem 1rem;
@@ -77,6 +107,7 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     color: #fff;
     background-color: rgba(255, 255, 255, 0.02);
+    box-sizing: border-box;
 }
 
 .input-group input:focus {
@@ -98,11 +129,18 @@ button[type="submit"] {
     font-family: 'Inter', sans-serif;
     cursor: pointer;
     box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
-.auth-submit-btn:hover,
-button[type="submit"]:hover {
+.auth-submit-btn:disabled,
+button[type="submit"]:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.auth-submit-btn:hover:not(:disabled),
+button[type="submit"]:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 0 30px rgba(168, 85, 247, 0.55);
 }
@@ -128,13 +166,23 @@ button[type="submit"]:hover {
 }
 
 .auth-msg {
-    color: #71717a;
     text-align: center;
-    font-size: 0.85rem;
-    margin-top: 1rem;
-    text-align: center;
-    text-decoration: none;
-    font-weight: 500;
-    margin-left: 0.35rem;
-    transition: color 0.15s ease;
+    font-size: 0.875rem;
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+}
+
+.auth-msg-success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #4ade80;
+}
+
+.auth-msg-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171;
 }
