@@ -1,43 +1,48 @@
 package com.example.personotes.services;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
-import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Value("${spring.mail.username:}")
-    private String mailUsername;
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
 
-    @Value("${spring.mail.password:}")
-    private String mailPassword;
+    @Value("${brevo.from.email:roldan.gerero21@gmail.com}")
+    private String brevoFromEmail;
 
-    private final JavaMailSender mailSender;
+    @Value("${brevo.from.name:PersoNotes}")
+    private String brevoFromName;
 
-    @Autowired
-    public EmailService(@Autowired(required = false) JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    private final HttpClient httpClient;
+
+    public EmailService() {
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     public void sendPasswordResetEmail(String toEmail, String token) {
         String baseUrl = (frontendUrl != null ? frontendUrl.trim().replaceAll("/+$", "") : "http://localhost:5173");
         String resetLink = baseUrl + "/reset-password?token=" + token;
 
-        // 1. Console Log (Always generated immediately)
+        // 1. Console Log (Always generated immediately for dev & logs)
         logger.info("================================================================================");
         logger.info("               PERSO-NOTES PASSWORD RESET NOTIFICATION                          ");
         logger.info("================================================================================");
@@ -46,31 +51,45 @@ public class EmailService {
         logger.info("This link will expire in 15 minutes.");
         logger.info("================================================================================");
 
-        // 2. Dispatch email asynchronously in background so web UI responds immediately (<50ms)
-        if (mailUsername != null && !mailUsername.trim().isEmpty() &&
-            mailPassword != null && !mailPassword.trim().isEmpty() &&
-            mailSender != null) {
-            CompletableFuture.runAsync(() -> sendViaSmtp(toEmail, resetLink));
+        // 2. Dispatch email asynchronously via Brevo HTTPS REST API (Port 443 - never blocked by cloud firewalls)
+        if (brevoApiKey != null && !brevoApiKey.trim().isEmpty()) {
+            CompletableFuture.runAsync(() -> sendViaBrevo(toEmail, resetLink));
         } else {
-            logger.warn("SPRING_MAIL_USERNAME or SPRING_MAIL_PASSWORD is not configured. Email will not be dispatched via Gmail.");
+            logger.warn("BREVO_API_KEY is not configured. Password reset link was only logged to console.");
         }
     }
 
-    private void sendViaSmtp(String toEmail, String resetLink) {
+    private void sendViaBrevo(String toEmail, String resetLink) {
         try {
-            logger.info("Connecting to Gmail SMTP to send password reset email to {}...", toEmail);
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            logger.info("Dispatching password reset email to {} via Brevo HTTPS API...", toEmail);
+            String htmlContent = buildHtmlTemplate(resetLink);
+            String payload = String.format(
+                "{\"sender\":{\"name\":\"%s\",\"email\":\"%s\"},\"to\":[{\"email\":\"%s\"}],\"subject\":\"%s\",\"htmlContent\":\"%s\"}",
+                escapeJson(brevoFromName),
+                escapeJson(brevoFromEmail),
+                escapeJson(toEmail),
+                escapeJson("Reset your PersoNotes password"),
+                escapeJson(htmlContent)
+            );
 
-            helper.setFrom(mailUsername.trim(), "PersoNotes");
-            helper.setTo(toEmail.trim());
-            helper.setSubject("Reset your PersoNotes password");
-            helper.setText(buildHtmlTemplate(resetLink), true);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(BREVO_API_URL))
+                    .header("api-key", brevoApiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(payload))
+                    .timeout(Duration.ofSeconds(10))
+                    .build();
 
-            mailSender.send(message);
-            logger.info(">>> SUCCESS: Password reset email successfully sent via Gmail to {}", toEmail);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                logger.info(">>> SUCCESS: Password reset email sent via Brevo to {}. Response: {}", toEmail, response.body());
+            } else {
+                logger.error(">>> FAILED: Brevo API returned status {}: {}", response.statusCode(), response.body());
+            }
         } catch (Exception e) {
-            logger.error(">>> ERROR sending email via Gmail SMTP to {}: {}", toEmail, e.getMessage(), e);
+            logger.error(">>> ERROR sending email via Brevo API to {}: {}", toEmail, e.getMessage(), e);
         }
     }
 
@@ -114,5 +133,31 @@ public class EmailService {
             </html>
             """;
         return html.replace("{{RESET_LINK}}", resetLink);
+    }
+
+    private String escapeJson(String str) {
+        if (str == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < ' ') {
+                        String hex = String.format("\\u%04x", (int) c);
+                        sb.append(hex);
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 }
