@@ -37,7 +37,7 @@ public class EmailService {
         String baseUrl = (frontendUrl != null ? frontendUrl.trim().replaceAll("/+$", "") : "http://localhost:5173");
         String resetLink = baseUrl + "/reset-password?token=" + token;
 
-        // 1. Log the reset link in the server console (immediately available)
+        // 1. Console Log (Always generated immediately)
         logger.info("================================================================================");
         logger.info("               PERSO-NOTES PASSWORD RESET NOTIFICATION                          ");
         logger.info("================================================================================");
@@ -46,19 +46,19 @@ public class EmailService {
         logger.info("This link will expire in 15 minutes.");
         logger.info("================================================================================");
 
-        // 2. Dispatch email asynchronously in the background so the user never waits
+        // 2. Dispatch email asynchronously in background so web UI responds immediately (<50ms)
         if (mailUsername != null && !mailUsername.trim().isEmpty() &&
             mailPassword != null && !mailPassword.trim().isEmpty() &&
             mailSender != null) {
             CompletableFuture.runAsync(() -> sendViaSmtp(toEmail, resetLink));
         } else {
-            logger.warn("SPRING_MAIL_USERNAME or SPRING_MAIL_PASSWORD is not set. Real email not sent.");
+            logger.warn("SPRING_MAIL_USERNAME or SPRING_MAIL_PASSWORD is not configured. Email will not be dispatched via Gmail.");
         }
     }
 
     private void sendViaSmtp(String toEmail, String resetLink) {
         try {
-            logger.info("Attempting to send email to {} via Gmail SMTP...", toEmail);
+            logger.info("Connecting to Gmail SMTP to send password reset email to {}...", toEmail);
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -68,7 +68,7 @@ public class EmailService {
             helper.setText(buildHtmlTemplate(resetLink), true);
 
             mailSender.send(message);
-            logger.info(">>> SUCCESS: Password reset email sent via Gmail SMTP to {}", toEmail);
+            logger.info(">>> SUCCESS: Password reset email successfully sent via Gmail to {}", toEmail);
         } catch (Exception e) {
             logger.error(">>> ERROR sending email via Gmail SMTP to {}: {}", toEmail, e.getMessage(), e);
         }
