@@ -78,7 +78,6 @@
 .dashboard-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
     flex-shrink: 0;
 }
 
@@ -109,47 +108,66 @@
     box-shadow: 0 0 24px rgba(168, 85, 247, 0.55);
 }
 
-.nav-divider {
-    width: 1px;
-    height: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0 0.15rem;
-}
-
+/* Standalone Logout Pill (Fixed top-right corner, icon unhovered, expands label on hover) */
 .btn-logout {
+    position: fixed;
+    top: 1.5rem;
+    right: 2rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.9rem;
+    justify-content: center;
+    height: 38px;
+    padding: 0 11px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 9999px;
     color: #a1a1aa;
-    font-size: 0.82rem;
-    font-weight: 500;
-    font-family: 'Inter', sans-serif;
     cursor: pointer;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    z-index: 50;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .btn-logout svg {
-    color: #71717a;
+    color: #a1a1aa;
+    flex-shrink: 0;
     transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-logout .logout-label {
+    max-width: 0;
+    opacity: 0;
+    margin-left: 0;
+    white-space: nowrap;
+    font-size: 0.82rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    transition: max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin-left 0.25s ease;
+    overflow: hidden;
+    color: #a1a1aa;
 }
 
 .btn-logout:hover {
     color: #f87171;
     background: rgba(239, 68, 68, 0.08);
     border-color: rgba(239, 68, 68, 0.25);
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.15);
-    transform: translateY(-1px);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+    padding: 0 14px;
 }
 
 .btn-logout:hover svg {
     color: #f87171;
-    transform: translateX(1px);
+    transform: translateX(-1px);
+}
+
+.btn-logout:hover .logout-label {
+    max-width: 70px;
+    opacity: 1;
+    margin-left: 6px;
+    color: #f87171;
 }
 
 /* Notes Grid Section */
