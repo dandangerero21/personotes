@@ -40,8 +40,8 @@ function LandingPage() {
                             <h3 className="note-title">Worried about someone reading your notes?</h3>
                             <p className="note-content">
                                 Your notes are secured with end-to-end encryption. <br /> <br />
-                                • You can delete your notes anytime.<br />
-                                • No one, not even us, can read your notes<br />
+                                • You can delete your notes anytime<br />
+                                • No one, not even us, can read your notes (it's hashed lol)<br />
                             </p>
                         </div>
                         <div className="note-tags">

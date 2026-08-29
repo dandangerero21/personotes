@@ -691,3 +691,186 @@
     color: #e4e4e7;
     font-weight: 500;
 }
+
+/* ==========================================================================
+   Interactive Checklists & Toolbar Styles
+   ========================================================================== */
+
+.note-rendered-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    text-align: left;
+}
+
+.note-text-line {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: #a1a1aa;
+    margin: 0;
+    word-break: break-word;
+}
+
+.note-empty-line {
+    height: 0.5rem;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    margin: 0 -0.35rem;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+    user-select: none;
+}
+
+.checklist-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.checklist-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    min-width: 17px;
+    min-height: 17px;
+    margin-top: 2px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 0;
+    color: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.checklist-checkbox:hover {
+    border-color: #a855f7;
+    background: rgba(168, 85, 247, 0.12);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
+.checklist-checkbox.checked {
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+    border-color: #a855f7;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.45);
+}
+
+.checklist-checkbox svg {
+    color: #ffffff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.checklist-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #e4e4e7;
+    transition: all 0.2s ease;
+    word-break: break-word;
+}
+
+.checklist-text.completed {
+    text-decoration: line-through;
+    color: #71717a;
+    opacity: 0.6;
+}
+
+.checklist-placeholder {
+    color: #52525b;
+    font-style: italic;
+}
+
+/* View Modal Specific Checklist Spacing */
+.view-modal-body .checklist-item {
+    padding: 0.25rem 0.5rem;
+    margin: 0 -0.5rem;
+    gap: 0.75rem;
+}
+
+.view-modal-body .checklist-checkbox {
+    width: 19px;
+    height: 19px;
+    min-width: 19px;
+    min-height: 19px;
+    margin-top: 3px;
+    border-radius: 5.5px;
+}
+
+.view-modal-body .checklist-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.view-modal-body .note-text-line {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #d4d4d8;
+}
+
+/* Editor Toolbar in New / Edit Note Modal */
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.6rem;
+    backdrop-filter: blur(8px);
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #d4d4d8;
+    font-size: 0.78rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.toolbar-btn svg {
+    color: #a855f7;
+    transition: transform 0.15s ease;
+}
+
+.toolbar-btn:hover {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.35);
+    color: #c084fc;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+    transform: translateY(-1px);
+}
+
+.toolbar-btn:hover svg {
+    transform: scale(1.1);
+}
+
+.toolbar-hint {
+    font-size: 0.74rem;
+    color: #71717a;
+    font-family: 'Inter', sans-serif;
+}
+
+@media (max-width: 540px) {
+    .toolbar-hint {
+        display: none;
+    }
+}
+

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import LandingBackground from './components/LandingBackground';
 import SplitText from './components/SplitText';
@@ -88,6 +88,7 @@ function Dashboard() {
     const [editingNote, setEditingNote] = useState<Note | null>(null);
     const [noteTitle, setNoteTitle] = useState('');
     const [noteContent, setNoteContent] = useState('');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const token = localStorage.getItem('token');
 
@@ -297,6 +298,214 @@ function Dashboard() {
         navigate('/login');
     };
 
+    // Checklist toggling handler (Optimistic UI + backend update)
+    const handleToggleChecklistItem = async (noteId: number, lineIndex: number, e?: React.MouseEvent) => {
+        if (e) {
+            e.stopPropagation();
+        }
+
+        const targetNote = notes.find((n) => n.id === noteId) || (viewingNote?.id === noteId ? viewingNote : null);
+        if (!targetNote) return;
+
+        const lines = (targetNote.content || '').split('\n');
+        if (lineIndex < 0 || lineIndex >= lines.length) return;
+
+        const line = lines[lineIndex];
+        const match = line.match(/^(\s*[-*]?\s*)\[([ xX])\](.*)$/);
+        if (!match) return;
+
+        const prefix = match[1];
+        const currentChecked = match[2].toLowerCase() === 'x';
+        const rest = match[3];
+        const newChar = currentChecked ? ' ' : 'x';
+        lines[lineIndex] = `${prefix}[${newChar}]${rest}`;
+        const newContent = lines.join('\n');
+
+        const updatedNote = { ...targetNote, content: newContent };
+        setNotes((prevNotes) =>
+            sortNotes(prevNotes.map((n) => (n.id === noteId ? updatedNote : n)))
+        );
+        if (viewingNote?.id === noteId) {
+            setViewingNote(updatedNote);
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/notes/update/${noteId}`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    title: targetNote.title,
+                    content: newContent,
+                    pinned: targetNote.pinned,
+                }),
+            });
+
+            if (!response.ok) {
+                await fetchNotes();
+            }
+        } catch (error) {
+            console.error('Failed to update checklist:', error);
+            await fetchNotes();
+        }
+    };
+
+    // Insert checklist marker into textarea
+    const handleInsertChecklist = () => {
+        const textarea = textareaRef.current;
+        if (!textarea) {
+            setNoteContent((prev) => (prev ? `${prev}\n- [ ] ` : '- [ ] '));
+            return;
+        }
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+
+        if (start !== end) {
+            // Prepend - [ ] to selected lines
+            const before = value.substring(0, start);
+            const selected = value.substring(start, end);
+            const after = value.substring(end);
+
+            const modified = selected
+                .split('\n')
+                .map((line) => (line.startsWith('- [ ] ') || line.startsWith('- [x] ') ? line : `- [ ] ${line}`))
+                .join('\n');
+
+            const newValue = before + modified + after;
+            setNoteContent(newValue);
+            setTimeout(() => {
+                textarea.focus();
+                textarea.setSelectionRange(start, start + modified.length);
+            }, 0);
+        } else {
+            // Insert - [ ] at start of current line or cursor
+            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+            const currentLine = value.substring(lineStart, start);
+
+            if (/^\s*[-*]?\s*\[[ xX]\]/.test(currentLine)) {
+                return;
+            }
+
+            const before = value.substring(0, lineStart);
+            const after = value.substring(lineStart);
+            const newValue = before + '- [ ] ' + after;
+            setNoteContent(newValue);
+
+            setTimeout(() => {
+                textarea.focus();
+                const newCursor = start + 6;
+                textarea.setSelectionRange(newCursor, newCursor);
+            }, 0);
+        }
+    };
+
+    // Smart Enter auto-continuation for checklists
+    const handleContentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter') {
+            const textarea = e.currentTarget;
+            const start = textarea.selectionStart;
+            const value = textarea.value;
+
+            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+            const lineToCursor = value.substring(lineStart, start);
+
+            const checklistMatch = lineToCursor.match(/^(\s*[-*]?\s*\[[ xX]\]\s*)(.*)$/);
+            if (checklistMatch) {
+                const textAfterPrefix = checklistMatch[2];
+
+                // If user pressed Enter on an empty checklist item, remove prefix and exit checklist mode
+                if (!textAfterPrefix.trim()) {
+                    e.preventDefault();
+                    const before = value.substring(0, lineStart);
+                    const after = value.substring(start);
+                    const newValue = before + after;
+                    setNoteContent(newValue);
+                    setTimeout(() => {
+                        textarea.setSelectionRange(lineStart, lineStart);
+                    }, 0);
+                    return;
+                }
+
+                // Auto continue with a new checklist item
+                e.preventDefault();
+                const before = value.substring(0, start);
+                const after = value.substring(start);
+                const nextItem = '\n- [ ] ';
+                const newValue = before + nextItem + after;
+                setNoteContent(newValue);
+                setTimeout(() => {
+                    const newCursor = start + nextItem.length;
+                    textarea.setSelectionRange(newCursor, newCursor);
+                }, 0);
+            }
+        }
+    };
+
+    const hasChecklists = (content: string) => {
+        return /^\s*[-*]?\s*\[[ xX]\]/m.test(content || '');
+    };
+
+    const renderNoteContent = (content: string, noteId?: number, isInteractive: boolean = false) => {
+        if (!content) return null;
+
+        const lines = content.split('\n');
+
+        return (
+            <div className="note-rendered-content">
+                {lines.map((line, index) => {
+                    const checklistMatch = line.match(/^(\s*[-*]?\s*)\[([ xX])\]\s*(.*)$/);
+                    if (checklistMatch) {
+                        const isChecked = checklistMatch[2].toLowerCase() === 'x';
+                        const text = checklistMatch[3];
+
+                        return (
+                            <div
+                                key={index}
+                                className={`checklist-item ${isChecked ? 'is-completed' : ''}`}
+                                onClick={(e) => {
+                                    if (isInteractive && noteId) {
+                                        handleToggleChecklistItem(noteId, index, e);
+                                    }
+                                }}
+                            >
+                                <button
+                                    type="button"
+                                    className={`checklist-checkbox ${isChecked ? 'checked' : ''}`}
+                                    onClick={(e) => {
+                                        if (isInteractive && noteId) {
+                                            handleToggleChecklistItem(noteId, index, e);
+                                        }
+                                    }}
+                                    aria-label={isChecked ? 'Mark incomplete' : 'Mark complete'}
+                                >
+                                    {isChecked && (
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    )}
+                                </button>
+                                <span className={`checklist-text ${isChecked ? 'completed' : ''}`}>
+                                    {text || <span className="checklist-placeholder">(empty item)</span>}
+                                </span>
+                            </div>
+                        );
+                    }
+
+                    if (!line.trim()) {
+                        return <div key={index} className="note-empty-line" />;
+                    }
+
+                    return (
+                        <p key={index} className="note-text-line">
+                            {line}
+                        </p>
+                    );
+                })}
+            </div>
+        );
+    };
+
     const filteredNotes = notes.filter(
         (n) =>
             n.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -420,16 +629,22 @@ function Dashboard() {
                                                     delay={15}
                                                     duration={0.45}
                                                 />
-                                                <BlurText
-                                                    key={`card-content-${note.id}-${note.content}`}
-                                                    text={note.content || ''}
-                                                    animateBy="words"
-                                                    startDelay={contentStartDelay}
-                                                    delay={18}
-                                                    stepDuration={0.25}
-                                                    direction="top"
-                                                    className="note-item-body"
-                                                />
+                                                {hasChecklists(note.content) ? (
+                                                    <div className="note-item-body">
+                                                        {renderNoteContent(note.content, note.id, true)}
+                                                    </div>
+                                                ) : (
+                                                    <BlurText
+                                                        key={`card-content-${note.id}-${note.content}`}
+                                                        text={note.content || ''}
+                                                        animateBy="words"
+                                                        startDelay={contentStartDelay}
+                                                        delay={18}
+                                                        stepDuration={0.25}
+                                                        direction="top"
+                                                        className="note-item-body"
+                                                    />
+                                                )}
                                             </div>
 
                                             <div className="note-item-footer">
@@ -508,15 +723,21 @@ function Dashboard() {
                                     to={{ opacity: 1, y: 0 }}
                                 />
 
-                                <BlurText
-                                    key={`content-${viewingNote.id}-${viewingNote.content}`}
-                                    text={viewingNote.content || ''}
-                                    animateBy="words"
-                                    delay={25}
-                                    stepDuration={0.25}
-                                    direction="top"
-                                    className="view-modal-body"
-                                />
+                                {hasChecklists(viewingNote.content) ? (
+                                    <div className="view-modal-body">
+                                        {renderNoteContent(viewingNote.content, viewingNote.id, true)}
+                                    </div>
+                                ) : (
+                                    <BlurText
+                                        key={`content-${viewingNote.id}-${viewingNote.content}`}
+                                        text={viewingNote.content || ''}
+                                        animateBy="words"
+                                        delay={25}
+                                        stepDuration={0.25}
+                                        direction="top"
+                                        className="view-modal-body"
+                                    />
+                                )}
                             </div>
 
                             <div className="view-modal-footer">
@@ -574,11 +795,29 @@ function Dashboard() {
                                     autoFocus
                                 />
 
+                                <div className="editor-toolbar">
+                                    <button
+                                        type="button"
+                                        className="toolbar-btn"
+                                        onClick={handleInsertChecklist}
+                                        title="Insert Checklist (- [ ])"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="9 11 12 14 22 4" />
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                        </svg>
+                                        <span>Checklist</span>
+                                    </button>
+                                    <span className="toolbar-hint">Press Enter on an item to add the next task</span>
+                                </div>
+
                                 <textarea
+                                    ref={textareaRef}
                                     className="modal-textarea-content"
-                                    placeholder="Write something..."
+                                    placeholder="Write something... or click Checklist above to create a task list"
                                     value={noteContent}
                                     onChange={(e) => setNoteContent(e.target.value)}
+                                    onKeyDown={handleContentKeyDown}
                                     rows={10}
                                 />
 
